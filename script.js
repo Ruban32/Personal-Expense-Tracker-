@@ -1,44 +1,79 @@
-let balance = 0;
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 
-function addTransaction(){
+window.onload = function () {
+  transactions.forEach(addToUI);
+  updateValues();
+};
 
+function addTransaction() {
   const text = document.getElementById("text").value;
   const amount = parseFloat(document.getElementById("amount").value);
   const type = document.getElementById("type").value;
 
-  if(text.trim() === "" || isNaN(amount)){
-    alert("Please fill all fields correctly");
+  if (text.trim() === "" || isNaN(amount)) {
+    alert("Please enter valid data");
     return;
   }
 
-  const list = document.getElementById("list");
+  const transaction = {
+    id: Date.now(),
+    text,
+    amount,
+    type
+  };
 
-  const li = document.createElement("li");
+  transactions.push(transaction);
+  localStorage.setItem("transactions", JSON.stringify(transactions));
 
-  li.innerHTML = `
-    ${text}
-    <span class="${type}">
-      ${type === "income" ? "+" : "-"}₹${amount}
-    </span>
-    <button onclick="removeTransaction(this, ${type === "income" ? amount : -amount})">X</button>
-  `;
-
-  list.appendChild(li);
-
-  if(type === "income"){
-    balance += amount;
-  } else {
-    balance -= amount;
-  }
-
-  document.getElementById("balance").innerText = `₹${balance}`;
+  addToUI(transaction);
+  updateValues();
 
   document.getElementById("text").value = "";
   document.getElementById("amount").value = "";
 }
 
-function removeTransaction(btn, value){
-  btn.parentElement.remove();
-  balance -= value;
+function addToUI(transaction) {
+  const list = document.getElementById("list");
+
+  const li = document.createElement("li");
+
+  li.innerHTML = `
+    ${transaction.text}
+    <span class="${transaction.type}">
+      ${transaction.type === "income" ? "+" : "-"}₹${transaction.amount}
+    </span>
+    <button onclick="deleteTransaction(${transaction.id})">X</button>
+  `;
+
+  list.appendChild(li);
+}
+
+function deleteTransaction(id) {
+  transactions = transactions.filter(t => t.id !== id);
+  localStorage.setItem("transactions", JSON.stringify(transactions));
+
+  document.getElementById("list").innerHTML = "";
+  transactions.forEach(addToUI);
+
+  updateValues();
+}
+
+function updateValues() {
+  let balance = 0;
+  let income = 0;
+  let expense = 0;
+
+  transactions.forEach(t => {
+    if (t.type === "income") {
+      balance += t.amount;
+      income += t.amount;
+    } else {
+      balance -= t.amount;
+      expense += t.amount;
+    }
+  });
+
   document.getElementById("balance").innerText = `₹${balance}`;
+  document.getElementById("income").innerText = `₹${income}`;
+  document.getElementById("expense").innerText = `₹${expense}`;
 }
